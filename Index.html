@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllable Highlighter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">Syllable Highlighter</h1>
+
+    <!-- Input and Output Fields -->
+    <div class="row my-4">
+        <div class="col-md-6">
+            <label for="inputText" class="form-label">Input Text</label>
+            <textarea id="inputText" class="form-control" rows="10"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label for="outputText" class="form-label">Output Text</label>
+            <div id="outputText" class="border p-3" style="min-height: 250px; background: #f8f9fa;"></div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="row my-4">
+        <div class="col-md-12 text-center">
+            <button id="convertBtn" class="btn btn-primary me-2">Convert</button>
+            <button id="resetBtn" class="btn btn-secondary">Reset</button>
+        </div>
+    </div>
+
+    <!-- Color Selection -->
+    <div class="row my-4">
+        <div class="col-md-12">
+            <h4>Select Colors</h4>
+            <div class="form-check">
+                <input type="radio" id="preset1" name="colorScheme" class="form-check-input" value="preset1" checked>
+                <label for="preset1" class="form-check-label">Preset 1: <span style="color: #0000ff;">Blue</span> and <span style="color: #ff0000;">Red</span></label>
+            </div>
+            <div class="form-check">
+                <input type="radio" id="preset2" name="colorScheme" class="form-check-input" value="preset2">
+                <label for="preset2" class="form-check-label">Preset 2: <span style="color: #000000;">Black</span> and <span style="color: #ff0000;">Red</span></label>
+            </div>
+            <div class="form-check">
+                <input type="radio" id="customColors" name="colorScheme" class="form-check-input" value="custom">
+                <label for="customColors" class="form-check-label">Custom Colors</label>
+            </div>
+            <div id="customColorInputs" class="mt-3" style="display: none;">
+                <label for="color1">Color 1:</label>
+                <input type="color" id="color1" value="#0000ff">
+                <label for="color2">Color 2:</label>
+                <input type="color" id="color2" value="#ff0000">
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Buttons -->
+    <div class="row my-4">
+        <div class="col-md-12 text-center">
+            <button id="copyBtn" class="btn btn-success me-2">Copy Text to Clipboard</button>
+            <button id="exportBtn" class="btn btn-warning">Export Text to .docx</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/Hide Custom Color Inputs
+    document.querySelectorAll('input[name="colorScheme"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            document.getElementById('customColorInputs').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+    });
+
+    // Convert Button
+    document.getElementById('convertBtn').addEventListener('click', async () => {
+        const inputText = document.getElementById('inputText').value;
+        const colorScheme = document.querySelector('input[name="colorScheme"]:checked').value;
+
+        let color1, color2;
+        if (colorScheme === 'preset1') {
+            color1 = '#0000ff';
+            color2 = '#ff0000';
+        } else if (colorScheme === 'preset2') {
+            color1 = '#000000';
+            color2 = '#ff0000';
+        } else {
+            color1 = document.getElementById('color1').value;
+            color2 = document.getElementById('color2').value;
+        }
+
+        // Send data to PHP for processing (AJAX example)
+        const response = await fetch('process.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({inputText, color1, color2})
+        });
+
+        const result = await response.text();
+        document.getElementById('outputText').innerHTML = result;
+    });
+
+    // Reset Button
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        document.getElementById('inputText').value = '';
+        document.getElementById('outputText').innerHTML = '';
+    });
+
+    // Copy to Clipboard
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const outputText = document.getElementById('outputText').innerText;
+        navigator.clipboard.writeText(outputText).then(() => alert('Text copied to clipboard!'));
+    });
+
+    // Export to Word
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const outputText = document.getElementById('outputText').innerHTML;
+        const blob = new Blob([outputText], {type: 'application/msword'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'highlighted-text.docx';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+</body>
+</html>
